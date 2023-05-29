@@ -2,6 +2,15 @@ package fish
 
 import "math/rand"
 
+var (
+	Chance map[string]float64 = map[string]float64{
+		Common:    0.64,
+		Uncommon:  0.30,
+		Rare:      0.05,
+		UltraRare: 0.01,
+	}
+)
+
 type Spawner struct {
 }
 
