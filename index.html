@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <script>
+    let spawnedFish = [];
+
+    const spawnedFishColors = {};
+
+    try {
+      const ev = new EventSource("http://localhost:8080/server/events");
+      ev.onmessage = function ({ data }) {
+        if (!spawnedFishColors[data]) {
+          spawnedFishColors[data] = Math.floor(
+            Math.random() * 16777215
+          ).toString(16);
+        }
+        const color = spawnedFishColors[data];
+
+        console.log(color, data);
+        const spawnedFishRoot = document.getElementById("spawned-fish");
+        const div = document.createElement("div");
+        div.style = `padding: 16px; margin: 16px; border: solid 1px grey;align-items:flex-start; flex-shrink: 0.3;background: #${color};`;
+        div.innerHTML = `${data} (${Date.now().toString()})`;
+        spawnedFishRoot.appendChild(div);
+      };
+    } catch (e) {
+      console.log(e);
+    }
+  </script>
+  <style>
+    #spawned-fish {
+      display: flex;
+      flex-wrap: wrap;
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+    #spawned-fish > div:nth-last-child(1) {
+      background: forestgreen;
+    }
+    #spawned-fish > div:nth-last-child(2) {
+      background: lightsalmon;
+    }
+  </style>
+  <body>
+    <div id="spawned-fish"></div>
+  </body>
+</html>
