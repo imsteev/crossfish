@@ -1,9 +1,13 @@
 package fish
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 var (
-	Chance map[string]float64 = map[string]float64{
+	defaultFish = PaleChub // 🙃
+
+	chances = map[string]float64{
 		Common:    0.64,
 		Uncommon:  0.30,
 		Rare:      0.05,
@@ -11,8 +15,7 @@ var (
 	}
 )
 
-type Spawner struct {
-}
+type Spawner struct{}
 
 // Spawn selects a fish given rarity chances.
 func (s *Spawner) Spawn() Fish {
@@ -20,24 +23,18 @@ func (s *Spawner) Spawn() Fish {
 
 	for _, rarity := range []string{UltraRare, Rare, Uncommon, Common} {
 		// no dice
-		if f >= Chance[rarity] {
+		if f >= chances[rarity] {
 			continue
 		}
 
 		group, ok := FishGroups[rarity]
 		if !ok || len(group) == 0 {
-			return PaleChub
+			return defaultFish
 		}
 
 		// Choose a random fish in group
-		rand.Shuffle(len(group), func(i, j int) {
-			tmp := group[i]
-			group[i] = group[j]
-			group[j] = tmp
-		})
-
-		return group[0]
+		return group[rand.Intn(len(group))]
 	}
 
-	return PaleChub
+	return defaultFish
 }

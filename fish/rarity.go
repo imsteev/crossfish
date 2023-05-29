@@ -1,7 +1,5 @@
 package fish
 
-type Rarity string
-
 var (
 	Common    string = "common"
 	Uncommon  string = "uncommon"

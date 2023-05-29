@@ -2,26 +2,24 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
-	"animalcrossing/fish"
+	"crossfish/fish"
+
+	"crossfish/lib/sse"
 )
 
-// Initialize the SSEMana/ger
-var manager = SSEManager{
-	clients:    make(map[http.ResponseWriter]chan<- string),
-	register:   make(chan clientRegistration),
-	unregister: make(chan http.ResponseWriter),
-}
+const SPAWN_EVERY_SECONDS = 1
 
 func main() {
 	http.HandleFunc("/server/events", handleSSE)
 	http.ListenAndServe(":8080", nil)
 }
 
-func init() {
-	go manager.run()
+type SSE struct {
+	http.ResponseWriter
 }
 
 func handleSSE(w http.ResponseWriter, r *http.Request) {
@@ -31,60 +29,23 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// Create a new channel to send messages to the SSE client
-	messageChan := make(chan string)
+	ticker := time.NewTicker(SPAWN_EVERY_SECONDS * time.Second)
+	defer ticker.Stop()
 
-	// Add the client's response writer to the SSEManager
-	manager.addClient(w, messageChan)
-
-	// Close the connection when the client closes the connection
+	// cleanup resources once connection is terminated
 	go func() {
+		defer ticker.Stop()
 		<-r.Context().Done()
-		fmt.Println("lost connection")
-
-		manager.removeClient(w)
+		log.Printf("connection terminated: %v\n", r.Context().Err())
 	}()
 
 	spawner := fish.Spawner{}
-
-	// Send a keep-alive message every 30 seconds to prevent the connection from closing
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
 	for range ticker.C {
-		fmt.Println("hello")
-		fmt.Fprintf(w, "data: %s\n\n", spawner.Spawn().Name)
+		fish := spawner.Spawn()
+		e := sse.Event{Data: &fish.Name}
+		serialized := e.Format()
+		log.Println(fish.Name)
+		fmt.Fprint(w, serialized)
 		w.(http.Flusher).Flush()
-	}
-}
-
-// SSEManager is responsible for managing SSE clients and sending messages
-type SSEManager struct {
-	clients    map[http.ResponseWriter]chan<- string
-	register   chan clientRegistration
-	unregister chan http.ResponseWriter
-}
-
-type clientRegistration struct {
-	client   http.ResponseWriter
-	messages chan<- string
-}
-
-func (m *SSEManager) addClient(client http.ResponseWriter, messages chan<- string) {
-	m.register <- clientRegistration{client: client, messages: messages}
-}
-
-func (m *SSEManager) removeClient(client http.ResponseWriter) {
-	m.unregister <- client
-}
-
-func (m *SSEManager) run() {
-	for {
-		select {
-		case registration := <-m.register:
-			m.clients[registration.client] = registration.messages
-		case client := <-m.unregister:
-			delete(m.clients, client)
-		}
 	}
 }
