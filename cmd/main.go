@@ -36,12 +36,13 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 
 	for range ticker.C {
 		fish := fish.SpawnFish()
-		typ := new(string)
-		*typ = "new-fish"
-		e := sse.Event{Data: &fish.Name, Type: typ}
-		serialized := e.Format()
-		log.Println(serialized)
-		fmt.Fprint(w, serialized)
+		writeSSE(w, sse.Event{Type: "new-fish", Data: fish.Name})
 		w.(http.Flusher).Flush()
 	}
+}
+
+func writeSSE(w http.ResponseWriter, e sse.Event) {
+	serialized := e.Format()
+	log.Println(serialized)
+	fmt.Fprint(w, serialized)
 }
