@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"crossfish/fish"
-
 	"crossfish/lib/sse"
 )
 
@@ -35,12 +34,13 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("connection terminated: %v\n", r.Context().Err())
 	}()
 
-	spawner := fish.Spawner{}
 	for range ticker.C {
-		fish := spawner.Spawn()
-		e := sse.Event{Data: &fish.Name}
+		fish := fish.SpawnFish()
+		typ := new(string)
+		*typ = "new-fish"
+		e := sse.Event{Data: &fish.Name, Type: typ}
 		serialized := e.Format()
-		log.Println(fish.Name)
+		log.Println(serialized)
 		fmt.Fprint(w, serialized)
 		w.(http.Flusher).Flush()
 	}

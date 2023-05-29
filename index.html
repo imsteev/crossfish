@@ -4,23 +4,31 @@
     const spawnedFish = {};
     try {
       const ev = new EventSource("http://localhost:8080/server/events");
-      ev.onmessage = function ({ data }) {
-        if (!spawnedFish[data]) {
-          spawnedFish[data] = { count: 0, color: randomHexColor() };
-        }
-        const spawnedFishRoot = document.getElementById("spawned-fish");
-        if (spawnedFishRoot) {
-          spawnedFishRoot.appendChild(
-            Fish({ name: data, color: spawnedFish[data].color })
-          );
-          spawnedFish[data].count++;
-        }
-
-        document.getElementById("caught-fish").innerText =
-          JSON.stringify(spawnedFish);
-      };
+      ev.addEventListener("new-fish", handleServerSentEvent);
     } catch (e) {
-      console.log(e);
+      console.error(`error opening EventSource: ${e}`);
+    }
+
+    function handleServerSentEvent({ data: fishName }) {
+      if (!spawnedFish[fishName]) {
+        spawnedFish[fishName] = { count: 0, color: randomHexColor() };
+      }
+
+      spawnedFish[fishName].count++;
+
+      // add fish to the screen
+      document
+        .getElementById("spawned-fish")
+        .appendChild(
+          Fish({ name: fishName, color: spawnedFish[fishName].color })
+        );
+
+      // update counter display
+      document.getElementById("caught-fish").innerText = Object.keys(
+        spawnedFish
+      )
+        .map((k) => `${k} (${spawnedFish[k].count})`)
+        .join("\n");
     }
 
     function Fish({ name, color }) {
@@ -43,7 +51,6 @@
       flex-direction: row;
       justify-content: flex-start;
     }
-
     .fish {
       padding: 16px;
       margin: 8px;

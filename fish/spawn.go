@@ -15,10 +15,8 @@ var (
 	}
 )
 
-type Spawner struct{}
-
 // Spawn selects a fish given rarity chances.
-func (s *Spawner) Spawn() Fish {
+func SpawnFish() Fish {
 	f := rand.Float64()
 
 	for _, rarity := range []string{UltraRare, Rare, Uncommon, Common} {
