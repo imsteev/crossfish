@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html>
   <script>
-    const spawnedFishColors = {};
+    const spawnedFish = {};
     try {
       const ev = new EventSource("http://localhost:8080/server/events");
       ev.onmessage = function ({ data }) {
-        if (!spawnedFishColors[data]) {
-          spawnedFishColors[data] = randomHexColor();
+        if (!spawnedFish[data]) {
+          spawnedFish[data] = { count: 0, color: randomHexColor() };
         }
         const spawnedFishRoot = document.getElementById("spawned-fish");
         if (spawnedFishRoot) {
           spawnedFishRoot.appendChild(
-            Fish({ name: data, color: spawnedFishColors[data] })
+            Fish({ name: data, color: spawnedFish[data].color })
           );
+          spawnedFish[data].count++;
         }
+
+        document.getElementById("caught-fish").innerText =
+          JSON.stringify(spawnedFish);
       };
     } catch (e) {
       console.log(e);
@@ -21,8 +25,10 @@
 
     function Fish({ name, color }) {
       const div = document.createElement("div");
-      div.style = `padding: 16px; margin: 16px; border: solid 1px grey;align-items:flex-start; flex-shrink: 0.3;background: #${color};`;
-      div.innerHTML = `${name} (${Date.now().toString()})`;
+      div.style = `background: #${color};`;
+      div.innerHTML = `${name}`;
+      div.className = "fish";
+      div.setAttribute("data-fish", name);
       return div;
     }
 
@@ -37,14 +43,20 @@
       flex-direction: row;
       justify-content: flex-start;
     }
-    #spawned-fish > div:nth-last-child(1) {
-      background: forestgreen;
-    }
-    #spawned-fish > div:nth-last-child(2) {
-      background: lightsalmon;
+
+    .fish {
+      padding: 16px;
+      margin: 8px;
+      border: solid 1px grey;
+      border-radius: 16px;
+      align-items: flex-start;
+      flex-shrink: 0.3;
+      cursor: pointer;
     }
   </style>
   <body>
+    <div id="caught-fish"></div>
+    <hr />
     <div id="spawned-fish"></div>
   </body>
 </html>
