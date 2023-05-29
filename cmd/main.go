@@ -18,10 +18,6 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-type SSE struct {
-	http.ResponseWriter
-}
-
 func handleSSE(w http.ResponseWriter, r *http.Request) {
 	// Set the response headers for SSE
 	w.Header().Set("Content-Type", "text/event-stream")
