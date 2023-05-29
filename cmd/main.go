@@ -1,29 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"crossfish/fish"
 	"crossfish/lib/sse"
+	"crossfish/middleware"
 )
 
 const SPAWN_EVERY_SECONDS = 1
 
 func main() {
-	http.HandleFunc("/server/events", handleSSE)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/server/events", middleware.ServerSentEvents(handleSSE))
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func handleSSE(w http.ResponseWriter, r *http.Request) {
-	// Set the response headers for SSE
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	ticker := time.NewTicker(SPAWN_EVERY_SECONDS * time.Second)
 	defer ticker.Stop()
 
@@ -34,15 +30,10 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("connection terminated: %v\n", r.Context().Err())
 	}()
 
+	eventServer := sse.EventServer{Writer: w}
 	for range ticker.C {
-		fish := fish.SpawnFish()
-		writeSSE(w, sse.Event{Type: "new-fish", Data: fish.Name})
-		w.(http.Flusher).Flush()
+		fish := fish.Spawn()
+		eventServer.Write(sse.Event{Type: "new-fish", Data: fish.Name})
+		eventServer.Flush()
 	}
-}
-
-func writeSSE(w http.ResponseWriter, e sse.Event) {
-	serialized := e.Format()
-	log.Println(serialized)
-	fmt.Fprint(w, serialized)
 }

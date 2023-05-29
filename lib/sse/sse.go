@@ -1,6 +1,10 @@
 package sse
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
 
 type Event struct {
 	Type string
@@ -17,4 +21,19 @@ func (e Event) Format() string {
 	}
 	s += "\n"
 	return s
+}
+
+// EventServer writes and sends data over HTTP
+type EventServer struct {
+	Writer http.ResponseWriter
+}
+
+func (e EventServer) Write(event Event) {
+	serialized := event.Format()
+	log.Println(serialized)
+	fmt.Fprint(e.Writer, serialized)
+}
+
+func (e EventServer) Flush() {
+	e.Writer.(http.Flusher).Flush()
 }

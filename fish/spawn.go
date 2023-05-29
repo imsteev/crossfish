@@ -16,7 +16,7 @@ var (
 )
 
 // Spawn selects a fish given rarity chances.
-func SpawnFish() Fish {
+func Spawn() Fish {
 	f := rand.Float64()
 
 	for _, rarity := range []string{UltraRare, Rare, Uncommon, Common} {
