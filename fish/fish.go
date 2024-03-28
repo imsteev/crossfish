@@ -1,4 +1,6 @@
-// fish contains data types describing fish and groupings based off rarity.
+// package fish contains data types describing fish and groupings
+// based off rarity. It also provides constructs for simulating
+// fish spawning.
 package fish
 
 type Fish struct {

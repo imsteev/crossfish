@@ -5,12 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"crossfish/fish"
-	"crossfish/lib/sse"
-	"crossfish/middleware"
+	"github.com/imsteev/crossfish/fish"
+	"github.com/imsteev/crossfish/lib/sse"
+	"github.com/imsteev/crossfish/middleware"
 )
-
-const SPAWN_EVERY_SECONDS = 1
 
 func main() {
 	http.HandleFunc("/server/events", middleware.ServerSentEvents(handleSSE))
@@ -29,7 +27,7 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	srv := sse.NewServer(w)
-	spn = fish.SpawnEvery(SPAWN_EVERY_SECONDS * time.Second)
+	spn = fish.SpawnEvery(time.Second)
 	for f := range spn.C {
 		srv.WriteEvent("new-fish", f.Name)
 		srv.Flush()

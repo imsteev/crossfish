@@ -6,18 +6,37 @@ import (
 )
 
 var (
-	defaultFish = PaleChub // 🙃
-
-	chances = map[string]float64{
-		Common:    0.64,
-		Uncommon:  0.30,
-		Rare:      0.05,
-		UltraRare: 0.01,
-	}
+	defaultFish = PaleChub
 )
 
-// Spawn selects a fish given rarity chances.
-func Spawn() Fish {
+type Spawner struct {
+	C    <-chan Fish
+	tick *time.Ticker
+}
+
+// Stop stops the spawner and releases resources.
+func (s *Spawner) Stop() {
+	s.tick.Stop()
+}
+
+// SpawnEvery starts a timer that will spawn one [Fish] every [dur] intervals.
+// Callers are responsible for calling [Spawner].Stop() to cleanup resources.
+func SpawnEvery(dur time.Duration) *Spawner {
+	spawner := make(chan Fish)
+	tick := time.NewTicker(dur)
+	go func() {
+		for range tick.C {
+			spawner <- spawn()
+		}
+	}()
+	return &Spawner{
+		C:    spawner,
+		tick: tick,
+	}
+}
+
+// spawn selects a fish given rarity.
+func spawn() Fish {
 	f := rand.Float64()
 
 	for _, rarity := range []string{UltraRare, Rare, Uncommon, Common} {
@@ -26,9 +45,9 @@ func Spawn() Fish {
 			continue
 		}
 
-		group, ok := FishGroups[rarity]
-		if !ok || len(group) == 0 {
-			return defaultFish
+		group := FishGroups[rarity]
+		if len(group) == 0 {
+			continue
 		}
 
 		// Choose a random fish in group
@@ -36,28 +55,4 @@ func Spawn() Fish {
 	}
 
 	return defaultFish
-}
-
-type Spawner struct {
-	C    <-chan Fish
-	tick *time.Ticker
-}
-
-// Call Stop to release resources.
-func (s *Spawner) Stop() {
-	s.tick.Stop()
-}
-
-func SpawnEvery(dur time.Duration) *Spawner {
-	spawner := make(chan Fish)
-	tick := time.NewTicker(dur)
-	go func() {
-		for range tick.C {
-			spawner <- Spawn()
-		}
-	}()
-	return &Spawner{
-		C:    spawner,
-		tick: tick,
-	}
 }
