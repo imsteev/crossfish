@@ -28,8 +28,13 @@ type EventServer struct {
 	Writer http.ResponseWriter
 }
 
-func (e EventServer) Write(event Event) {
-	serialized := event.Format()
+func NewServer(w http.ResponseWriter) *EventServer {
+	return &EventServer{w}
+}
+
+// WriteEvent is responsible for writing valid protocol to the sink.
+func (e EventServer) WriteEvent(typ, data string) {
+	serialized := Event{Type: typ, Data: data}.Format()
 	log.Println(serialized)
 	fmt.Fprint(e.Writer, serialized)
 }

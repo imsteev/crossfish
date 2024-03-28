@@ -30,10 +30,10 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("connection terminated: %v\n", r.Context().Err())
 	}()
 
-	eventServer := sse.EventServer{Writer: w}
+	srv := sse.NewServer(w)
 	for range ticker.C {
 		fish := fish.Spawn()
-		eventServer.Write(sse.Event{Type: "new-fish", Data: fish.Name})
-		eventServer.Flush()
+		srv.WriteEvent("new-fish", fish.Name)
+		srv.Flush()
 	}
 }
