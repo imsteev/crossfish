@@ -20,20 +20,18 @@ func main() {
 }
 
 func handleSSE(w http.ResponseWriter, r *http.Request) {
-	ticker := time.NewTicker(SPAWN_EVERY_SECONDS * time.Second)
-	defer ticker.Stop()
+	var spn *fish.Spawner
 
-	// cleanup resources once connection is terminated
 	go func() {
-		defer ticker.Stop()
 		<-r.Context().Done()
+		spn.Stop()
 		log.Printf("connection terminated: %v\n", r.Context().Err())
 	}()
 
 	srv := sse.NewServer(w)
-	for range ticker.C {
-		fish := fish.Spawn()
-		srv.WriteEvent("new-fish", fish.Name)
+	spn = fish.SpawnEvery(SPAWN_EVERY_SECONDS * time.Second)
+	for f := range spn.C {
+		srv.WriteEvent("new-fish", f.Name)
 		srv.Flush()
 	}
 }

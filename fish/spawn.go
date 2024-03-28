@@ -2,6 +2,7 @@ package fish
 
 import (
 	"math/rand"
+	"time"
 )
 
 var (
@@ -35,4 +36,28 @@ func Spawn() Fish {
 	}
 
 	return defaultFish
+}
+
+type Spawner struct {
+	C    <-chan Fish
+	tick *time.Ticker
+}
+
+// Call Stop to release resources.
+func (s *Spawner) Stop() {
+	s.tick.Stop()
+}
+
+func SpawnEvery(dur time.Duration) *Spawner {
+	spawner := make(chan Fish)
+	tick := time.NewTicker(dur)
+	go func() {
+		for range tick.C {
+			spawner <- Spawn()
+		}
+	}()
+	return &Spawner{
+		C:    spawner,
+		tick: tick,
+	}
 }
